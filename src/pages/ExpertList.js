@@ -43,7 +43,6 @@ export default function ExpertList() {
       if (category) params.append("category", category);
 
       const response = await API.get(`/experts?${params}`);
-
       const data = response?.data || {};
 
       setExperts(data?.experts || []);
@@ -56,7 +55,7 @@ export default function ExpertList() {
       );
     } catch (err) {
       console.error("Fetch Experts Error:", err);
-      setError("Failed to load experts. Check backend URL.");
+      setError("Failed to load experts.");
       setExperts([]);
     } finally {
       setLoading(false);
@@ -67,7 +66,6 @@ export default function ExpertList() {
     fetchExperts();
   }, [fetchExperts]);
 
-  // Debounce search
   useEffect(() => {
     const t = setTimeout(() => {
       setSearch(searchInput);
@@ -83,18 +81,25 @@ export default function ExpertList() {
 
   return (
     <div>
-      <h1>Find Your Expert</h1>
+      <div className="page-header">
+        <h1>Find Your Expert</h1>
+        <p>Connect with industry-leading professionals</p>
+      </div>
 
-      {/* Filters */}
-      <div>
+      <div className="filters-bar">
         <input
+          className="search-input"
           type="text"
           placeholder="Search..."
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
         />
 
-        <select value={category} onChange={handleCategoryChange}>
+        <select
+          className="category-filter"
+          value={category}
+          onChange={handleCategoryChange}
+        >
           <option value="">All Categories</option>
           {CATEGORIES.map((c) => (
             <option key={c} value={c}>
@@ -104,65 +109,92 @@ export default function ExpertList() {
         </select>
       </div>
 
-      {/* Loading */}
-      {loading && <p>Loading experts...</p>}
-
-      {/* Error */}
-      {!loading && error && (
-        <div>
-          <p style={{ color: "red" }}>{error}</p>
-          <button onClick={fetchExperts}>Retry</button>
+      {loading ? (
+        <div className="loading-container">
+          <div className="spinner" />
+          <p>Loading experts...</p>
         </div>
-      )}
-
-      {/* Empty */}
-      {!loading && !error && (!experts || experts.length === 0) && (
-        <p>No experts found.</p>
-      )}
-
-      {/* Experts */}
-      {!loading && !error && experts?.length > 0 && (
+      ) : error ? (
+        <div className="error-container">
+          <p>{error}</p>
+          <button className="btn btn-primary" onClick={fetchExperts}>
+            Retry
+          </button>
+        </div>
+      ) : !experts || experts.length === 0 ? (
+        <div className="empty-state">
+          <p>No experts found.</p>
+        </div>
+      ) : (
         <>
-          <p>
+          <p className="results-count">
             Showing {experts.length} of {pagination?.totalExperts || 0} experts
           </p>
 
-          <div>
+          <div className="experts-grid">
             {experts.map((expert) => (
               <div
                 key={expert?._id}
+                className="card card-hover expert-card"
                 onClick={() => navigate(`/experts/${expert?._id}`)}
-                style={{
-                  border: "1px solid #ccc",
-                  padding: "15px",
-                  marginBottom: "10px",
-                  cursor: "pointer",
-                }}
               >
-                <h3>{expert?.name || "Unnamed Expert"}</h3>
-                <p>Category: {expert?.category || "N/A"}</p>
-                <p>
-                  ⭐{" "}
-                  {expert?.rating
-                    ? expert.rating.toFixed(1)
-                    : "0.0"}{" "}
-                  ({expert?.totalReviews || 0} reviews)
-                </p>
-                <p>Experience: {expert?.experience || 0} yrs</p>
-                <p>₹{expert?.hourlyRate || 0}/hr</p>
-
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    navigate(
-                      `/book/${expert?._id}?name=${encodeURIComponent(
-                        expert?.name || ""
+                <div className="expert-card-header">
+                  <img
+                    src={
+                      expert?.avatar ||
+                      `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                        expert?.name || "User"
                       )}`
-                    );
-                  }}
-                >
-                  Book Session
-                </button>
+                    }
+                    alt={expert?.name}
+                    className="expert-avatar"
+                  />
+
+                  <div>
+                    <div className="expert-name">
+                      {expert?.name || "Unnamed Expert"}
+                    </div>
+                    <span className="expert-category-badge">
+                      {expert?.category || "N/A"}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="expert-meta">
+                  <span>
+                    ⭐{" "}
+                    {expert?.rating
+                      ? expert.rating.toFixed(1)
+                      : "0.0"}{" "}
+                    ({expert?.totalReviews || 0})
+                  </span>
+
+                  <span>💼 {expert?.experience || 0} yrs</span>
+                </div>
+
+                <p className="expert-bio">
+                  {expert?.bio || "No bio available."}
+                </p>
+
+                <div className="expert-footer">
+                  <div className="hourly-rate">
+                    ₹{expert?.hourlyRate || 0} /hr
+                  </div>
+
+                  <button
+                    className="btn btn-primary btn-sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(
+                        `/book/${expert?._id}?name=${encodeURIComponent(
+                          expert?.name || ""
+                        )}`
+                      );
+                    }}
+                  >
+                    Book Session
+                  </button>
+                </div>
               </div>
             ))}
           </div>
